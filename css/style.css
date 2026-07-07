@@ -1,44 +1,215 @@
-/*
-Creator: Dragon Prince
-Date: 23.10.2011
-Time: 08:02 PM
-*/
+/* -------------------------------------------------------------------------
+ * BombJack — retro vertical road shooter.
+ * Arcade cabinet vibe: dark backdrop, neon accents, pixel headings.
+ * ---------------------------------------------------------------------- */
 
-
-
-#move 
-{
-background:url(../images/background.png) repeat 5% 5%;
-//background-repeat:repeat-y;
-position: absolute;
-top: 0; left: 0; right: 0; bottom: 0;
-z-index: 100;
+:root {
+	--ink: #eaf0ff;
+	--muted: #9fb0d8;
+	--panel: rgba(9, 12, 28, 0.9);
+	--accent: #ff2e97;
+	--accent-2: #00e5ff;
+	--pixel: 'Press Start 2P', 'Courier New', monospace;
+	--sans: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
 }
 
-#move2 
-{
-background:url(../images/midground.png);
-background-repeat:repeat-y;
-position: absolute;
-top: 0; left: 0; right: 0; bottom: 0;
-z-index: 100;
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+	font-family: var(--sans);
+	color: var(--ink);
+	background: radial-gradient(1200px 800px at 50% -10%, #2a1030 0%, #0a0a1f 55%, #05050f 100%);
+	overflow: hidden;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
-#move3 
-{
-background:url(../images/foreground.png) ;
-background-repeat:repeat-y;
-position: absolute;
-top: 0; left: 0; right: 0; bottom: 0;
-z-index: 100;
+.frame {
+	width: min(96vw, 460px, calc(88vh / 1.62));
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
-canvas 
-{
-display:block;
-margin:0px auto 0;
-background:none;
+/* -------------------------------- HUD --------------------------------- */
+
+.hud {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 12px;
+	background: var(--panel);
+	border: 1px solid rgba(255, 255, 255, .1);
+	border-radius: 12px;
+	font-family: var(--pixel);
+	font-size: clamp(8px, 2.2vw, 12px);
+}
+.hud__label { display: block; font-size: 7px; color: var(--muted); margin-bottom: 5px; letter-spacing: 1px; }
+.hud__cell { text-align: left; }
+.hud__cell--mid { text-align: center; font-size: clamp(7px, 2vw, 10px); }
+.hud__cell--r { text-align: right; }
+.hud__cell:first-child span:last-child { color: var(--accent-2); }
+.hud__cell--r span:last-child { color: var(--accent); font-family: var(--sans); font-size: 15px; letter-spacing: 1px; }
+
+/* ------------------------------ playfield ----------------------------- */
+
+.playfield {
+	position: relative;
+	width: 100%;
+	aspect-ratio: 2 / 3;
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, .08), 0 24px 60px rgba(0, 0, 0, .55);
+}
+#game { display: block; width: 100%; height: 100%; touch-action: none; }
+
+.bossbar {
+	position: absolute;
+	top: 8px; left: 10px; right: 10px;
+	z-index: 4;
+}
+.bossbar__name { font-family: var(--pixel); font-size: 9px; color: #fff; text-shadow: 0 1px 3px #000; }
+.bossbar__track { height: 10px; margin-top: 4px; background: rgba(0, 0, 0, .5); border: 1px solid rgba(255, 255, 255, .3); border-radius: 6px; overflow: hidden; }
+.bossbar__fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff2e97, #ff6b6b); transition: width .1s linear; }
+
+.subhud {
+	position: absolute;
+	top: 8px; left: 10px;
+	z-index: 3;
+	display: flex;
+	gap: 10px;
+	font-family: var(--pixel);
+	font-size: 8px;
+	color: var(--muted);
+	text-shadow: 0 1px 2px #000;
+}
+.subhud b { color: var(--accent-2); }
+.bossbar:not([hidden]) ~ .subhud { top: 34px; }
+
+.combo {
+	position: absolute;
+	top: 16%; left: 50%;
+	transform: translateX(-50%) scale(.6);
+	font-family: var(--pixel);
+	font-size: clamp(11px, 3.2vw, 18px);
+	color: #ffd166;
+	text-shadow: 0 2px 0 rgba(0, 0, 0, .6);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity .15s ease, transform .15s ease;
+	z-index: 3;
+}
+.combo--show { opacity: 1; transform: translateX(-50%) scale(1); }
+
+.bombbtn {
+	position: absolute;
+	bottom: 12px; right: 12px;
+	z-index: 4;
+	width: 54px; height: 54px;
+	border-radius: 50%;
+	border: 2px solid rgba(255, 255, 255, .3);
+	background: rgba(255, 159, 67, .25);
+	font-size: 24px;
+	cursor: pointer;
+	display: none;
 }
 
+/* ------------------------------ screens ------------------------------- */
 
+.screen {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: safe center;
+	overflow-y: auto;
+	gap: 12px;
+	padding: 20px;
+	text-align: center;
+	background: rgba(5, 6, 16, .84);
+	backdrop-filter: blur(2px);
+	z-index: 6;
+}
+.screen[hidden] { display: none; }
+.screen > *:not(.lb-scroll) { flex-shrink: 0; }
 
+.logo {
+	font-family: var(--pixel);
+	font-size: clamp(24px, 8vw, 44px);
+	margin: 0;
+	color: #fff;
+	line-height: 1.2;
+	text-shadow: 0 0 8px var(--accent), 3px 3px 0 var(--accent-2);
+}
+.logo span { color: var(--accent); }
+.tagline { margin: 0; color: var(--muted); font-size: clamp(11px, 3vw, 14px); }
+.title-top { margin: 0; font-family: var(--pixel); font-size: 8px; color: var(--accent-2); min-height: 10px; }
+
+.screen-title { font-family: var(--pixel); font-size: clamp(14px, 4.4vw, 22px); margin: 0; color: #fff; }
+.screen-sub { margin: 0; color: var(--muted); font-size: 12px; }
+.big-score { font-family: var(--pixel); font-size: clamp(22px, 8vw, 40px); margin: 4px 0; color: var(--accent-2); }
+.hint { margin: 0; color: var(--muted); font-size: 11px; }
+
+.intro-level { font-family: var(--pixel); font-size: 10px; color: var(--accent-2); margin: 0; }
+.intro-name { font-family: var(--pixel); font-size: clamp(16px, 5vw, 26px); margin: 6px 0; color: #fff; text-shadow: 0 0 12px var(--accent); }
+.intro-tag { margin: 0 0 6px; color: var(--muted); font-style: italic; }
+
+/* ------------------------------ buttons ------------------------------- */
+
+.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
+.btn {
+	font-family: var(--pixel);
+	font-size: 10px;
+	color: var(--ink);
+	background: rgba(255, 255, 255, .08);
+	border: 2px solid rgba(255, 255, 255, .25);
+	border-radius: 10px;
+	padding: 12px 14px;
+	cursor: pointer;
+	transition: transform .08s ease, background .15s ease;
+}
+.btn:hover { background: rgba(255, 255, 255, .16); }
+.btn:active { transform: translateY(2px); }
+.btn--primary { color: #05131a; background: var(--accent-2); border-color: transparent; box-shadow: 0 0 16px rgba(0, 229, 255, .5); }
+.btn--primary:hover { background: #4df0ff; }
+
+/* --------------------------- initials entry --------------------------- */
+
+.slots { display: flex; gap: 12px; }
+.slot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px; border-radius: 10px; border: 2px solid transparent; cursor: pointer; }
+.slot--active { border-color: var(--accent-2); box-shadow: 0 0 14px rgba(0, 229, 255, .4); }
+.slot__ch { font-family: var(--pixel); font-size: clamp(24px, 8vw, 36px); color: #fff; width: 1.2em; }
+.slot__up, .slot__down { background: rgba(255, 255, 255, .1); border: none; color: var(--accent-2); font-size: 15px; width: 40px; height: 24px; border-radius: 6px; cursor: pointer; }
+
+/* ----------------------------- leaderboard ---------------------------- */
+
+.lb-scroll { width: 100%; flex: 0 1 auto; min-height: 0; overflow-y: auto; display: flex; justify-content: center; }
+.lb { width: min(100%, 360px); border-collapse: collapse; font-size: 14px; }
+.lb thead th { position: sticky; top: 0; background: #0a0c1c; font-family: var(--pixel); font-size: 8px; color: var(--muted); text-align: left; padding: 6px 8px 10px; letter-spacing: 1px; }
+.lb td { padding: 7px 8px; border-top: 1px solid rgba(255, 255, 255, .08); }
+.lb-ini { font-family: var(--pixel); font-size: 12px; color: var(--accent-2); letter-spacing: 1px; }
+.lb-score { text-align: right; font-variant-numeric: tabular-nums; }
+.lb tr:nth-child(1) .lb-ini { color: #ffd166; }
+.lb-me td { background: rgba(0, 229, 255, .14); }
+.lb-loading { text-align: center; color: var(--muted); padding: 18px; }
+
+/* ------------------------------- howto -------------------------------- */
+
+.howto { text-align: left; max-width: 380px; margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: #d6def5; }
+.howto li { margin: 6px 0; }
+.pw { list-style: none; margin-left: -18px; line-height: 2.1; }
+.pw__b { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 5px; color: #05131a; font-weight: bold; font-family: monospace; margin: 0 3px 0 8px; }
+
+/* --------------------------- touch controls --------------------------- */
+
+@media (hover: none) and (pointer: coarse) {
+	.bombbtn { display: block; }
+}
