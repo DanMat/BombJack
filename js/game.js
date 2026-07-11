@@ -289,7 +289,9 @@
 			if (hitSomething) { bullets.splice(i, 1); continue; }
 			if (bossActive && boss && overlap(b, boss)) {
 				bullets.splice(i, 1); boss.hp--; explode(b.x, b.y, boss.color, 3);
-				if (boss.hp <= 0) { defeatBoss(); }
+				// defeatBoss() clears the level and rebuilds `bullets` — stop
+				// iterating the old array immediately or we'd deref past its end.
+				if (boss.hp <= 0) { defeatBoss(); return; }
 			}
 		}
 	}
