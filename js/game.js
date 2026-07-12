@@ -47,6 +47,7 @@
 	var state = 'title';
 	var levelIndex = 0, level, score = 0, lives = 3, bombs = 1, combo = 0, comboTimer = 0;
 	var kills = 0, bossActive = false, boss = null;
+	var testMode = false, testDeaths = 0, wonFlag = false;   // autopilot: infinite lives + finish flag
 	var player, bullets, enemies, ebullets, powerups, hazards, particles;
 	var weapon = 'single', weaponTimer = 0;
 	var shieldTimer = 0, boostTimer = 0, invuln = 0, slip = 0;
@@ -101,6 +102,32 @@
 		bindButtons();
 		showTitle();
 		Retroix.loop(step).start();
+		setupAutopilot();
+	}
+
+	// Dev mode: Konami code -> a bot that steers the car (auto-fire shoots up) to
+	// line up under enemies/boss and dodge falling bullets/hazards, to check all
+	// levels + bosses are beatable. Infinite lives; deaths bucketed by level.
+	function setupAutopilot() {
+		Retroix.autopilot({
+			start: function () { testMode = true; testDeaths = 0; if (state === 'title') { startGame(); } },
+			stop: function () { testMode = false; },
+			bot: function () {
+				if (state !== 'playing' || !player) { return; }
+				var px = player.x + player.w / 2, tx = px;
+				if (bossActive && boss) { tx = boss.x + boss.w / 2; }
+				else if (enemies.length) { var ne = enemies[0]; for (var i = 1; i < enemies.length; i++) { if (enemies[i].y > ne.y) { ne = enemies[i]; } } tx = ne.x + ne.w / 2; }
+				var dodge = 0, j;
+				for (j = 0; j < ebullets.length; j++) { var eb = ebullets[j]; if (eb.y > player.y - 130 && eb.y < player.y + 60 && Math.abs(eb.x - px) < 46) { dodge += (px - eb.x >= 0 ? 65 : -65); } }
+				for (j = 0; j < hazards.length; j++) { var hz = hazards[j]; if (hz.y > player.y - 130 && hz.y < player.y + 60 && Math.abs(hz.x + hz.w / 2 - px) < 60) { dodge += (px - (hz.x + hz.w / 2) >= 0 ? 65 : -65); } }
+				input.pointer = { x: clamp(tx + dodge, 20, W - 20), y: H - 80 };
+			},
+			progress: function () { return levelIndex * 100000 + score; },
+			location: function () { return levelIndex; },
+			deaths: function () { return testDeaths; },
+			isWin: function () { return !!wonFlag; },
+			deathsPerSpot: 8, stuck: 25, timeout: 220
+		});
 	}
 
 	/* ------------------------------ flow --------------------------------- */
@@ -150,11 +177,14 @@
 		invuln = 1.6; fx.shake(0.75); fx.flash('#ff6b6b', 0.3); sfx.explosion();
 		explode(player.x + player.w / 2, player.y + player.h / 2, '#ff6b6b', 18);
 		updateHud();
-		if (lives <= 0) { endGame(false); }
+		if (lives <= 0) {
+			if (testMode) { testDeaths++; lives = 3; invuln = 1.6; return; }   // infinite lives while testing
+			endGame(false);
+		}
 	}
 
 	function endGame(won) {
-		state = 'ending';
+		state = 'ending'; wonFlag = won;
 		sfx.stopMusic(0.4); sfx.jingle(won ? 'win' : 'gameover');
 		if (won) { score += 2000; }
 		board.qualifies(score).then(function (ok) {
