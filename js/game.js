@@ -624,7 +624,7 @@
 	function showLeaderboard(highlight, won) {
 		state = 'leaderboard';
 		el.lbTitle.textContent = won ? 'You beat BombJack!' : 'High Scores';
-		el.lbMode.textContent = board.mode === 'supabase' ? 'online' : 'this device';
+		el.lbMode.textContent = board.mode === 'local' ? 'this device' : 'online';
 		Retroix.renderLeaderboard(el.lbBody, null, { loadingText: 'Loading…' });
 		showScreen('screenLeaderboard');
 		board.top().then(function (rows) {
