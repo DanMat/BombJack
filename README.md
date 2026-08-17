@@ -31,28 +31,16 @@
 | Smart bomb | <kbd>Space</kbd> / <kbd>X</kbd> / 💣 button |
 | Pause | <kbd>P</kbd> or <kbd>Esc</kbd> |
 
-## Online leaderboard
+## High scores
 
-BombJack shares one **Supabase** project (and `scores` table) with the other games,
-namespaced by `gameId`. It works out of the box on **localStorage**; to enable
-shared online scores:
+High scores go to a **shared Cloudflare leaderboard** — a Worker + D1
+([retroix-leaderboard](https://github.com/DanMat/retroix-leaderboard)) shared by all of
+Dan's Retroix games and namespaced by `gameId`, so this game's board is its own. It
+works out of the box (no account, no setup) and validates + caps scores server-side.
+Blank `apiUrl` in [`js/config.js`](js/config.js) to fall back to a local
+(per-browser) board.
 
-1. Create a free project at [supabase.com](https://supabase.com) and run
-   [`docs/supabase.sql`](docs/supabase.sql) in the SQL editor (once, shared by all games).
-2. Put your **Project URL** and public **anon/publishable key** in
-   [`js/config.js`](js/config.js) (already filled in for this repo):
-   ```js
-   window.GAME_CONFIG = {
-     supabaseUrl: 'https://YOUR-PROJECT.supabase.co',
-     supabaseAnonKey: 'YOUR-PUBLISHABLE-KEY',
-     gameId: 'bombjack',
-     leaderboardSize: 10
-   };
-   ```
-
-The publishable key is public by design; the database is protected by the
-row-level-security policies in the SQL file. The leaderboard module
-(`js/leaderboard.js`) is shared verbatim across games — just change `gameId`.
+> Any client-side leaderboard can be spoofed by a determined player — it's for fun, not competition.
 
 ## Play locally
 
@@ -70,8 +58,7 @@ python3 -m http.server 8000   # then visit http://localhost:8000
 | --- | --- |
 | `js/game.js` | Canvas engine: render loop, procedural sprites, physics, bosses, state machine. |
 | `js/levels.js` | Pure-data level definitions (add a level = add an object). |
-| `js/leaderboard.js` | Shared high-score store: Supabase REST with a localStorage fallback. |
-| `js/config.js` | Supabase URL/key and game id. |
+| `js/config.js` | Leaderboard API URL and game id. |
 
 ## Credits
 
